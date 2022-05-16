@@ -10,7 +10,7 @@ public class Mikasa {
 	private double y;
 	private double orientacion;
 	private double velocidad;
-	private double radio = 40;
+	private double radio = 30;
 		
 	// Constructores
 	public Mikasa(double x, double y, double orientacion) {
@@ -39,15 +39,15 @@ public class Mikasa {
 			this.y += Math.sin(this.orientacion) * this.velocidad;
 		}
 		if (direccion == Math.PI/2) { // Abajo
-      this.orientacion = Math.PI/2;
-      this.x += Math.cos(this.orientacion) * this.velocidad;
+      			this.orientacion = Math.PI/2;
+      			this.x += Math.cos(this.orientacion) * this.velocidad;
 			this.y += Math.sin(this.orientacion) * this.velocidad;
-    }
+    		}
 		if (direccion == Math.PI) { // Izquierda
-      this.orientacion = Math.PI;
+      			this.orientacion = Math.PI;
 			this.x -= this.velocidad;
-    }
-    if (direccion == 0) { // Derecha
+    		}
+    		if (direccion == 0) { // Derecha
 			this.orientacion = 0;
 			this.x += this.velocidad;
 		}
@@ -56,18 +56,49 @@ public class Mikasa {
 	public void noAvanzar(Entorno e) {
 		if (this.x < this.radio/2) {
 			this.x += this.velocidad;
-    }
-    if (this.y < this.radio/2) {
-      this.y += this.velocidad;
-    }
-    if (this.x > e.ancho() - this.radio/2) {
-      this.x -= this.velocidad;
-    }
-    if (this.y > e.alto() - this.radio/2) {
-      this.y -= this.velocidad;
-    }
+		}
+		if (this.y < this.radio/2) {
+		      	this.y += this.velocidad;
+		}
+		if (this.x > e.ancho() - this.radio/2) {
+		      	this.x -= this.velocidad;
+		}
+		if (this.y > e.alto() - this.radio/2) {
+		      	this.y -= this.velocidad;
+		}
 	}
 	
+	public void noColision(Obstaculo o) {
+		double distancia = Math.sqrt ((this.x-o.getX())*(this.x-o.getX()) + (this.y-o.getY())*(this.y-o.getY()));
+		if (distancia < this.radio + o.getRadio()) {
+			this.x -= this.velocidad;
+			this.y -= this.velocidad;
+		}
+		if (distancia > this.radio + o.getRadio()) {
+			this.x -= this.velocidad;
+			this.y -= this.velocidad;
+		}
+		if (distancia == this.radio + o.getRadio()) {
+			this.x += this.velocidad;
+			this.y += this.velocidad;
+		}
+	}
+	
+	public boolean colisionConTitan(Entorno e, Titan t) {
+		if (t == null) {
+            		return false;
+        	}
+		return this.x > t.getX() - this.radio/2 && this.x < t.getX() + this.radio/2 && this.y > t.getY() - this.radio/2 && this.y < t.getY() + this.radio/2;
+	}
+
+	public boolean colisionConObstaculo(Entorno e, Obstaculo o) {
+		double distancia = Math.sqrt ((this.x-o.getX())*(this.x-o.getX()) + (this.y-o.getY())*(this.y-o.getY()));
+		if (distancia < this.radio + o.getRadio()) {
+			return true;
+		}
+		return false;
+	}
+
 	public boolean colisionConEntorno(Entorno e) {
 		return this.x - 40 < this.radio || this.x + 20 > e.ancho() - this.radio || this.y - 40 < this.radio || this.y + 20 > e.alto() - this.radio;		
 	}
@@ -88,5 +119,8 @@ public class Mikasa {
 	public double getOrientacion() {
 		return this.orientacion;
 	}
-	
+
+	public double getRadio() {
+		return this.radio;
+	}
 }
