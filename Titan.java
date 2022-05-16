@@ -13,7 +13,7 @@ public class Titan {
 	private double h;
 	private double orientacion;
 	private double velocidad;
-	private double radio = 80;
+	private double radio = 60;
 	
 	// Constructores
 	public Titan(double x, double y, double orientacion) {
@@ -44,12 +44,47 @@ public class Titan {
 		this.y += this.dy * this.velocidad;
 	}
   
+	public void noAvanzar(Entorno e) {
+		if (this.x < this.radio/2) {
+			this.x += this.velocidad;
+        	}
+        	if (this.y < this.radio/2) {
+        		this.y += this.velocidad;
+        	}
+        	if (this.x > e.ancho() - this.radio/2) {
+        		this.x -= this.velocidad;
+       		}
+        	if (this.y > e.alto() - this.radio/2) {
+        		this.y -= this.velocidad;
+        	}
+	}
+	
+	public boolean colisionEntreTitanes(Entorno e, Titan t) {
+		if (t == null) {
+            		return false;
+        	}
+		return this.x > t.getX() - this.radio/2 && this.x < t.getX() + this.radio/2 && this.y > t.getY() - this.radio/2 && this.y < t.getY() + this.radio/2;
+	}
+	
+//	public boolean colisionConObstaculos(Entorno e, Obstaculo o) {
+//		
+//	}
+	
+	public boolean colisionConEntorno(Entorno e) {
+		return this.x - 40 < this.radio || this.x + 20 > e.ancho() - this.radio || this.y - 40 < this.radio || this.y + 20 > e.alto() - this.radio;		
+	}
+
+	
 	public double getX() {
 		return this.x;
 	}
 
 	public double getY() {
 		return this.y;
+	}
+	
+	public double getOrientacion() {
+		return this.orientacion;
 	}
 	
 	public double getRadio() {
