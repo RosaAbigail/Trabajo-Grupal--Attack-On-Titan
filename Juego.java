@@ -17,36 +17,49 @@ public class Juego extends Interface {
   private int titanesAsesinados;
   private int puntaje;
   private int vidas;
+  private boolean tomarSuero;
   private boolean finDelJuego;
   
   public Juego() { // Principal
     // Inicializar el entorno
-    this.entorno = new Entorno(this, "Attack on Titan: Wings of Freedom", 1360, 670);
+    this.entorno = new Entorno(this, "Attack on Titan: Wings of Freedom", 800, 600);
     mikasa = new Mikasa(entorno.ancho()/2, entorno.alto()/2, -Math.PI/2);
     titanes = new Titan[6];
+    obstaculos = new Obstaculo[6];
     
     // Contadores mostrados en pantalla
     cantidadDeProyectiles = 60;
     titanesAsesinados = 0;
     puntaje = 0;
     vidas = 3;
+    
+    // Otros
+    tomarSuero = false;
     finDelJuego = false;
     
-    // Creacion de los titanes
+    // Creacion de los obstaculos y los titanes
     Random r = new Random();
-    double x = (entorno.ancho()/30) + (((entorno.ancho()-60) - (entorno.ancho()/30)) * r.nextDouble());
-    double y = (entorno.alto()/15) + (((entorno.alto()-70) - (entorno.ancho()/15)) * r.nextDouble());
-    int i = 0;
+    double maxX = entorno.ancho()-50;
+    double minX = entorno.ancho()/100;
+    double maxY = entorno.alto()-50;
+    double minY = entorno.alto()/100;
+    double x = minX + (maxX - minX) * r.nextDouble();
+    double y = minY + (maxY - minY) * r.nextDouble();
     double orientacion = Math.PI/2;
+    int i = 0;
+    
+    for (int j = 0; j < obstaculos.length; j++) {
+      obstaculos[i++] = new Obstaculos(x, y);
+      x = minX + (maxX - minX) * r.nextDouble();
+      y = minY + (maxY - minY) * r.nextDouble();
+    }
     
     for (int j = 0; j < titanes.length; j++) {
       titanes[i++] = new Titan(x, y, orientacion);
-      x = (entorno.ancho()/30) + (((entorno.ancho()-60) - (entorno.ancho()/30)) * r.nextDouble());
-      y = (entorno.alto()/15) + (((entorno.alto()-70) - (entorno.ancho()/15)) * r.nextDouble());
+      x = minX + (maxX - minX) * r.nextDouble();
+      y = minY + (maxY - minY) * r.nextDouble();
       orientacion = orientacion * (-1);
-      
-    // Creacion de los obstaculos
-    
+    }
     
     // Inicia el juego
     this.entorno.iniciar();
@@ -54,17 +67,32 @@ public class Juego extends Interface {
   
   public void tick() { // Control de pantalla
     // Dibujar en pantalla
-    for (Titan t: titanes) {
-      if (t != null) {
-        t.dibujar(entorno);
-        t.desplazamiento(entorno, mikasa);
-      } 
+    for (int i = 0; i < obstaculos.length; i++) {
+			if (obstaculos[i] != null) {
+				obstaculos[i].dibujar(entorno);
+			}
+		}
+    
+    for (int i = 0; i < titanes.length; i++) {
+			if (titanes[i] != null) {
+				titanes[i].dibujar(entorno);
+				titanes[i].desplazamiento(entorno, mikasa);
+				if (mikasa.colisionConTitan(entorno, titanes[i])) {
+					finDelJuego = true;
+				}
+      }
     }
     
     mikasa.dibujar(entorno);
     
     // Control de movimiento
-    if (mikasa.colisionConEntorno(entorno)) { // Agregar colisionConObstaculo
+    for (int i = 0; i < obstaculos.length; i++) {
+			if (mikasa.colisionConObstaculo(entorno, obstaculos[i])) {
+        mikasa.noColision(obstaculos[i]);
+			}
+		}
+
+    if (mikasa.colisionConEntorno(entorno)) {
       mikasa.noAvanzar(entorno);
     }
     if (entorno.estaPresionada('w')) {
@@ -105,17 +133,28 @@ public class Juego extends Interface {
       }
       
       // Colision con obstaculo o entorno
+      for (int i = 0; i < obstaculos.length; i++) {
+				if (proyectil != null && obstaculos[i] != null & proyectil.colisionConObstaculo(obstaculos[i])) {
+					proyectil = null;
+				}
+			}
+      
       if (proyectil != null && proyectil.colisionConEntorno(entorno)) { // Agregar colision con obstaculo
         proyectil = null;
       }
     }
     
     // Texto en pantalla
-    
+    entorno.cambiarFont("sans", entorno.alto()/40, Color.RED); // Modificar coodenadas
+	  entorno.escribirTexto("Proyectiles restantes: " + cantidadDeProyectiles, entorno.ancho()/80, entorno.alto()/50);
+	  entorno.escribirTexto("Titanes eliminados: " + titanesAsesinados, entorno.ancho()/80, entorno.alto()/30);
+	  entorno.escribirTexto("Puntaje: " + puntaje, entorno.ancho()/80, entorno.alto()/20);
+	  entorno.escribirTexto("Vidas: " + vidas, entorno.ancho()/80, entorno.alto()/16);
       
     // Pantalla de fin del juego
-    
-      
+    if (finDelJuego == true) {
+      entorno.escribirTexto("Puntaje final: " + puntaje, entorno.ancho()/2, entorno.alto()/2);
+    }
   }
     
   // Inicar el juego
