@@ -1,8 +1,8 @@
 package juego;
 
-import java.awt.*;
 import entorno.Entorno;
 import entorno.Herramientas;
+import java.awt.*;
 
 public class Mikasa {	
 	// Variables	
@@ -10,116 +10,77 @@ public class Mikasa {
 	private double y;
 	private double orientacion;
 	private double velocidad;
-	private double radio = 30;
-		
+	private double radio;
+	Image m1_d;
+	Image m1_i;
+//	Image m2_d;
+//	Image m2_i;
+	
 	// Constructores
-	public Mikasa(double x, double y, double orientacion) {
+	public Mikasa(double x, double y) {
 		this.x = x;
 		this.y = y;
 		this.orientacion = orientacion;
+		this.velocidad = 4;
+		this.radio = 85;
+		this.m1_d = Herramientas.cargarImagen("m1_d.png");
+		this.m1_i = Herramientas.cargarImagen("m1_i.png");
+//		this.m2_d = Herramientas.cargarImagen("m2_d.png");
+//		this.m2_i = Herramientas.cargarImagen("m2_i.png");
 	}
 	
 	// Metodos
-	public void dibujar(Entorno e) {
-		e.dibujarCirculo(x, y, radio, Color.RED);
-	}
-		
-	public void caminar(Entorno e) {
-		this.velocidad = 3;
-	}
-	
-	public void correr(Entorno e) {
-		this.velocidad = 6;
-	}
-	
-	public void desplazamiento(double direccion) {
-		if (direccion == -Math.PI/2) { // Arriba
-			this.orientacion = -Math.PI/2;
-			this.x += Math.cos(this.orientacion) * this.velocidad;
-			this.y += Math.sin(this.orientacion) * this.velocidad;
+	public void dibujar(Entorno e) { // Modificar
+		if (this.orientacion > -Math.PI/2 || this.orientacion > Math.PI/2) {
+			e.dibujarImagen(m1_d, this.x, this.y, 0);
 		}
-		if (direccion == Math.PI/2) { // Abajo
-      			this.orientacion = Math.PI/2;
-      			this.x += Math.cos(this.orientacion) * this.velocidad;
-			this.y += Math.sin(this.orientacion) * this.velocidad;
-    		}
-		if (direccion == Math.PI) { // Izquierda
-      			this.orientacion = Math.PI;
-			this.x -= this.velocidad;
-    		}
-    		if (direccion == 0) { // Derecha
-			this.orientacion = 0;
-			this.x += this.velocidad;
+		if (this.orientacion < Math.PI/2 || this.orientacion < -Math.PI/2) {
+			e.dibujarImagen(m1_i, this.x, this.y, 0);
 		}
 	}
-	
-	public void noAvanzar(Entorno e) {
-		if (this.x < this.radio/2) {
-			this.x += this.velocidad;
+	public void avanzar(Entorno e) {
+		this.x += Math.cos(this.orientacion) * this.velocidad;
+		this.y += Math.sin(this.orientacion) * this.velocidad;
+	}	
+	public void noAvanzar(Entorno e, Obstaculo o) { // Encontrar la lógica o modificar la colision con el entorno
+		if (this.x <= this.radio/2 || this.y <= this.radio/2 || this.x >= e.ancho() - this.radio/2 || this.y >= e.alto() - this.radio/2) { 	// Colision con entorno
+			this.orientacion += Math.PI/2;
+        }
+		if ((this.x - o.getX()) * (this.x - o.getX()) + (this.y - o.getY()) * (this.y - o.getY()) <= this.radio * o.getRadio()) { // Colision con obstaculos
+			this.orientacion += Math.PI/2;
 		}
-		if (this.y < this.radio/2) {
-		      	this.y += this.velocidad;
+	}	
+	public void girar(double direccion) {
+		this.orientacion += direccion;
+		if (this.orientacion < 0) {
+			this.orientacion += Math.PI * 2;
 		}
-		if (this.x > e.ancho() - this.radio/2) {
-		      	this.x -= this.velocidad;
+		if (this.orientacion > Math.PI * 2) {
+			this.orientacion -= Math.PI * 2;
 		}
-		if (this.y > e.alto() - this.radio/2) {
-		      	this.y -= this.velocidad;
-		}
+	}	
+	public boolean colisionConKyojin(Entorno e, Kyojin k) {
+		return (this.x - k.getX()) * (this.x - k.getX()) + (this.y - k.getY()) * (this.y - k.getY()) <= this.radio * k.getRadio();
 	}
-	
-	public void noColision(Obstaculo o) {
-		double distancia = Math.sqrt ((this.x-o.getX())*(this.x-o.getX()) + (this.y-o.getY())*(this.y-o.getY()));
-		if (distancia < this.radio + o.getRadio()) {
-			this.x -= this.velocidad;
-			this.y -= this.velocidad;
-		}
-		if (distancia > this.radio + o.getRadio()) {
-			this.x -= this.velocidad;
-			this.y -= this.velocidad;
-		}
-		if (distancia == this.radio + o.getRadio()) {
-			this.x += this.velocidad;
-			this.y += this.velocidad;
-		}
-	}
-	
-	public boolean colisionConTitan(Entorno e, Titan t) {
-		if (t == null) {
-            		return false;
-        	}
-		return this.x > t.getX() - this.radio/2 && this.x < t.getX() + this.radio/2 && this.y > t.getY() - this.radio/2 && this.y < t.getY() + this.radio/2;
-	}
-
 	public boolean colisionConObstaculo(Entorno e, Obstaculo o) {
-		double distancia = Math.sqrt ((this.x-o.getX())*(this.x-o.getX()) + (this.y-o.getY())*(this.y-o.getY()));
-		if (distancia < this.radio + o.getRadio()) {
-			return true;
-		}
-		return false;
+		return (this.x - o.getX()) * (this.x - o.getX()) + (this.y - o.getY()) * (this.y - o.getY()) <= this.radio * o.getRadio();
+	}	
+	public boolean colisionConSuero(Entorno e, Suero s) {
+		return (this.x - s.getX()) * (this.x - s.getX()) + (this.y - s.getY()) * (this.y - s.getY()) <= this.radio * s.getRadio();
 	}
-
 	public boolean colisionConEntorno(Entorno e) {
-		return this.x - 40 < this.radio || this.x + 20 > e.ancho() - this.radio || this.y - 40 < this.radio || this.y + 20 > e.alto() - this.radio;		
+		return this.x <= this.radio || this.y <= this.radio || this.x >= e.ancho() - this.radio || this.y >= e.alto() - this.radio;		
 	}
-
-	public Proyectil lanzarProyectil(Entorno e) {
-		Proyectil proyectil = new Proyectil(e, x, y, orientacion);
-		return proyectil;
-	}
-	
 	public double getX() {
 		return this.x;
 	}
-
 	public double getY() {
 		return this.y;
 	}
-	
 	public double getOrientacion() {
 		return this.orientacion;
 	}
-
+	
 	public double getRadio() {
 		return this.radio;
 	}
