@@ -1,164 +1,137 @@
-package  juego;
+package juego;
 
-import java.util.Random;
 import java.awt.*;
+import java.time.*;
 import entorno.Entorno;
+import entorno.Herramientas;
 import entorno.InterfaceJuego;
 
-public class Juego extends Interface {
-  // Variables
-  private Entorno entorno;
-  private Mikasa mikasa;
-  private Proyectil proyectil;
-  private Suero suero;
-  private Titan[] titanes;
-  private Obstaculo[] obstaculos;
-  private int cantidadDeProyectiles;
-  private int titanesAsesinados;
-  private int puntaje;
-  private int vidas;
-  private boolean tomarSuero;
-  private boolean finDelJuego;
-  
-  public Juego() { // Principal
-    // Inicializar el entorno
-    this.entorno = new Entorno(this, "Attack on Titan: Wings of Freedom", 800, 600);
-    mikasa = new Mikasa(entorno.ancho()/2, entorno.alto()/2, -Math.PI/2);
-    titanes = new Titan[6];
-    obstaculos = new Obstaculo[6];
-    
-    // Contadores mostrados en pantalla
-    cantidadDeProyectiles = 60;
-    titanesAsesinados = 0;
-    puntaje = 0;
-    vidas = 3;
-    
-    // Otros
-    tomarSuero = false;
-    finDelJuego = false;
-    
-    // Creacion de los obstaculos y los titanes
-    Random r = new Random();
-    double maxX = entorno.ancho()-50;
-    double minX = entorno.ancho()/100;
-    double maxY = entorno.alto()-50;
-    double minY = entorno.alto()/100;
-    double x = minX + (maxX - minX) * r.nextDouble();
-    double y = minY + (maxY - minY) * r.nextDouble();
-    double orientacion = Math.PI/2;
-    int i = 0;
-    
-    for (int j = 0; j < obstaculos.length; j++) {
-      obstaculos[i++] = new Obstaculos(x, y);
-      x = minX + (maxX - minX) * r.nextDouble();
-      y = minY + (maxY - minY) * r.nextDouble();
-    }
-    
-    for (int j = 0; j < titanes.length; j++) {
-      titanes[i++] = new Titan(x, y, orientacion);
-      x = minX + (maxX - minX) * r.nextDouble();
-      y = minY + (maxY - minY) * r.nextDouble();
-      orientacion = orientacion * (-1);
-    }
-    
-    // Inicia el juego
-    this.entorno.iniciar();
-  }
-  
-  public void tick() { // Control de pantalla
-    // Dibujar en pantalla
-    for (int i = 0; i < obstaculos.length; i++) {
-			if (obstaculos[i] != null) {
-				obstaculos[i].dibujar(entorno);
-			}
-		}
-    
-    for (int i = 0; i < titanes.length; i++) {
-			if (titanes[i] != null) {
-				titanes[i].dibujar(entorno);
-				titanes[i].desplazamiento(entorno, mikasa);
-				if (mikasa.colisionConTitan(entorno, titanes[i])) {
-					finDelJuego = true;
-				}
-      }
-    }
-    
-    mikasa.dibujar(entorno);
-    
-    // Control de movimiento
-    for (int i = 0; i < obstaculos.length; i++) {
-			if (mikasa.colisionConObstaculo(entorno, obstaculos[i])) {
-        mikasa.noColision(obstaculos[i]);
-			}
-		}
+public class Juego extends InterfaceJuego {
+	// Variables
+	private Entorno entorno;
+    private Proyectil p;
+	private Mikasa m;
+	private Suero s;
+    private Kyojin[] k;
+    private Obstaculo[] o;
+    private int proyectilesRestantes, kyojinesAsesinados, puntaje, vidas;
+    private boolean tomarSuero, finDelJuego;
+	Image fondo_juego, radar;
 
-    if (mikasa.colisionConEntorno(entorno)) {
-      mikasa.noAvanzar(entorno);
-    }
-    if (entorno.estaPresionada('w')) {
-      mikasa.desplazamiento(-Math.PI/2);
-    }
-    if (entorno.estaPresionada('s')) {
-      mikasa.desplazamiento(Math.PI/2);
-    }
-    if (entorno.estaPresionada('a')) {
-      mikasa.desplazamiento(0);
-    }
-    if (entorno.estaPresionada(entorno.TECLA_SHIFT)) {
-      mikasa.correr(entorno);
-    }
-    else {
-      mikasa.caminar(entorno);
-    }
-    
-    // Proyectiles
-    if (proyectil == null && cantidadDeProyectiles > 0) { // Creacion de proyectil
-      if (entorno.sePresiono(entorno.TECLA_ESPACIO)) {
-        proyectil = mikasa.lanzarProyectil(entorno);
-        cantidadDeProyectiles -= 1;
-    }
-    
-    if (proyectil != null) { // Dibujar y mover proyectiles
-      proyectil.dibujar(entorno);
-      proyectil.desplazamiento();
-      
-      // Colision con titanes
-      for (int i = 0; i < titanes.length; i++) {
-        if (proyectil != null && titanes[i] != null && proyectil.colisionConTitan(titanes[i], proyectil)) {
-          titanes[i] = null;
-          proyectil = null;
-          titanesAsesinados++;
-          puntaje += 15;
-        }
-      }
-      
-      // Colision con obstaculo o entorno
-      for (int i = 0; i < obstaculos.length; i++) {
-				if (proyectil != null && obstaculos[i] != null & proyectil.colisionConObstaculo(obstaculos[i])) {
-					proyectil = null;
+	public Juego() {
+		this.entorno = new Entorno(this, "Attack on Titan: Wings of Freedom", 1280, 700);
+		m = new Mikasa(entorno.ancho()/2, entorno.alto()/2);
+		k = new Kyojin[6];
+		o = new Obstaculo[6];
+		proyectilesRestantes = 100;
+		kyojinesAsesinados = 0;
+        puntaje = 0;
+        vidas = 3;
+        tomarSuero = false;
+		finDelJuego = false;
+		fondo_juego = Herramientas.cargarImagen("fondo_juego.jpg");
+		radar = Herramientas.cargarImagen("radar.png");
+	    Obstaculo.crearObstaculos(entorno, o);
+//	    Kyojin.crearKyojines(entorno, k, m);
+		this.entorno.iniciar();
+	}
+
+	public void tick() {
+		// Dibujar obstaculos y titanes
+		entorno.dibujarImagen(fondo_juego, entorno.ancho()/2, entorno.alto()/2, 0);
+
+		for (int i = 0; i < o.length; i++) {
+			if (o[i] != null) {
+				entorno.dibujarCirculo(o[i].getX(), o[i].getY(), o[i].getRadio(), Color.BLACK);
+				o[i].dibujar(entorno);
+			}
+		}
+		
+//		for (int i = 0; i < k.length; i++) {
+//			if (k[i] != null) {
+//				entorno.dibujarCirculo(k[i].getX(), k[i].getY(), k[i].getRadio(), Color.BLACK);
+//				k[i].dibujar(entorno);
+//				k[i].avanzar(entorno, m);
+//			}
+//			if (k[i] == null) {
+//				k[i] = new Kyojin(entorno.ancho()/2, 0, m.getOrientacion());
+//			}
+//		}
+		
+		// Dibujar + Control de moviento de Mikasa
+		entorno.dibujarCirculo(m.getX(), m.getY(), m.getRadio(), Color.BLACK);
+		m.dibujar(entorno);
+		entorno.dibujarTriangulo(m.getX(), m.getY(), 15, 15, m.getOrientacion(), Color.BLUE);
+		entorno.dibujarImagen(radar, m.getX(), m.getY(), m.getOrientacion());
+		
+		if (entorno.estaPresionada('w')) {
+			m.avanzar(entorno);
+		}
+		if (entorno.estaPresionada('a')) {
+			m.girar((-1/360.0)*(2*Math.PI));
+		}
+		if (entorno.estaPresionada('d')) {
+			m.girar((1/360.0)*(2*Math.PI));
+		}
+		
+		for (int i = 0; i < o.length; i++) {
+			if (m.colisionConEntorno(entorno) || m.colisionConObstaculo(entorno, o[i])) {
+				m.noAvanzar(entorno, o[i]);
+			}
+		}
+		
+		// Suero
+//		if (tomarSuero == false) {
+//			s = new Suero(700, 100);
+//			s.dibujar(entorno);
+//			if (m.colisionConSuero(entorno, s)) {
+//				entorno.dibujarCirculo(m.getX(), m.getY(), m.getRadio(), Color.BLACK);
+//				m.dibujar(entorno);
+//				tomarSuero = true;
+//				s = null;
+//			}
+//		}
+		
+		// Proyectiles
+		if (p == null && proyectilesRestantes > 0 && tomarSuero == false) { // Crear proyectil
+			if (entorno.sePresiono(entorno.TECLA_ESPACIO)) {
+				p = new Proyectil(entorno, m.getX(), m.getY(), m.getOrientacion());
+				proyectilesRestantes -= 1;
+			}
+		}
+		
+		if (p != null) { // Dibujar y mover proyectiles + Interaccion
+			p.dibujar(entorno);
+			p.desplazamiento();
+			for (int i = 0; i < k.length; i++) { // Colision con titanes
+				if (p != null && k[i] != null && p.colisionConKyojin(k[i])) {
+					k[i] = null;
+					p = null;
+					kyojinesAsesinados += 1;
+					puntaje += 15;
 				}
 			}
-      
-      if (proyectil != null && proyectil.colisionConEntorno(entorno)) { // Agregar colision con obstaculo
-        proyectil = null;
-      }
-    }
-    
-    // Texto en pantalla
-    entorno.cambiarFont("sans", entorno.alto()/40, Color.RED); // Modificar coodenadas
-	  entorno.escribirTexto("Proyectiles restantes: " + cantidadDeProyectiles, entorno.ancho()/80, entorno.alto()/50);
-	  entorno.escribirTexto("Titanes eliminados: " + titanesAsesinados, entorno.ancho()/80, entorno.alto()/30);
-	  entorno.escribirTexto("Puntaje: " + puntaje, entorno.ancho()/80, entorno.alto()/20);
-	  entorno.escribirTexto("Vidas: " + vidas, entorno.ancho()/80, entorno.alto()/16);
-      
-    // Pantalla de fin del juego
-    if (finDelJuego == true) {
-      entorno.escribirTexto("Puntaje final: " + puntaje, entorno.ancho()/2, entorno.alto()/2);
-    }
-  }
-    
-  // Inicar el juego
-  @SuppressWarnings("unused")
-  public static void main(String[] args) {
-    Juego juego = new Juego();
-  }
+			for (int i = 0; i < o.length; i++) { // Colision con obstaculos
+				if (p != null && o[i] != null && (p.colisionConObstaculo(o[i]) || p.colisionConEntorno(entorno))) {
+					p = null;
+				}
+			}
+		}
+				
+		// Texto en pantalla
+		entorno.cambiarFont("sans", entorno.alto()/40, Color.RED); // Modificar coodenadas
+	    entorno.escribirTexto("Proyectiles restantes: " + proyectilesRestantes, entorno.ancho()/80, entorno.alto()/50);
+	    entorno.escribirTexto("Titanes eliminados: " + kyojinesAsesinados, entorno.ancho()/80, entorno.alto()/30);
+	    entorno.escribirTexto("Puntaje: " + puntaje, entorno.ancho()/80, entorno.alto()/20);
+	    entorno.escribirTexto("Vidas: " + vidas, entorno.ancho()/80, entorno.alto()/16);
+
+	    // Pantalla de fin del juego
+	    // ...	    
+	}
+	
+	// Inicia el juego
+	@SuppressWarnings("unused")
+	public static void main(String[] args) {
+		Juego juego = new Juego();
+	}
+}
